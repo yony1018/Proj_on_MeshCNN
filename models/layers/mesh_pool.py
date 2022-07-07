@@ -40,20 +40,27 @@ class MeshPool(nn.Module):
 
     def __pool_main(self, mesh_index):
         mesh = self.__meshes[mesh_index]
+        TempInput = self.__fe[mesh_index, :, :mesh.edges_count]
+
         queue = self.__build_queue(self.__fe[mesh_index, :, :mesh.edges_count], mesh.edges_count)
+
         # recycle = []
         # last_queue_len = len(queue)
         last_count = mesh.edges_count + 1
         mask = np.ones(mesh.edges_count, dtype=np.bool)
         edge_groups = MeshUnion(mesh.edges_count, self.__fe.device)
 
-        # print(mesh.edges_count)
-        if mesh.edges_count==450 or mesh.edges_count==300:
-            pass
 
         while mesh.edges_count > self.__out_target:
             #TODO:----------index of queue may cause errors. It seems like a null queue being build and can't be pop---------#
-            value, edge_id = heappop(queue)
+            try:
+                value, edge_id = heappop(queue)
+            except:
+                #TODO:force remove outrange mesh in edge_groups
+                # mesh.edges_count = self.__out_target
+                # edge_groups.cut(self.__out_target)
+                break
+
             edge_id = int(edge_id)
             #TODO:-------------------after integer edge_id, it may out of 750---------------#
             assert edge_id<=750,'edge_id out of 750!'
@@ -61,7 +68,12 @@ class MeshPool(nn.Module):
                 self.__pool_edge(mesh, edge_id, mask, edge_groups)
         mesh.clean(mask, edge_groups)
         fe = edge_groups.rebuild_features(self.__fe[mesh_index], mask, self.__out_target)
-        self.__updated_fe[mesh_index] = fe
+
+        # TODO:force remove outrange features in edge_groups
+        if fe.shape[1]==self.__out_target:
+            self.__updated_fe[mesh_index] = fe
+        else:
+            self.__updated_fe[mesh_index] = fe[:, :self.__out_target]
 
     def __pool_edge(self, mesh, edge_id, mask, edge_groups):
         if self.has_boundaries(mesh, edge_id):

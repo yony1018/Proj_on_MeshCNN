@@ -86,9 +86,14 @@ def fill_from_file(mesh, file):
     assert np.logical_and(faces >= 0, faces < len(vs)).all()
 
     #TODO:Standardization!
-    vs = Standardization(vs)
+    # vs = Standardization(vs)
+    vs = ZeroCenter(vs)
 
     return vs, faces
+
+def ZeroCenter(data):
+    scale = max(abs(data.max()),abs(data.min()))
+    return data/scale
 
 
 def Standardization(data):

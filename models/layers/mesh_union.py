@@ -8,6 +8,11 @@ class MeshUnion:
         self.rebuild_features = self.rebuild_features_average
         self.groups = torch.eye(n, device=device)
 
+    #TODO:force cut
+    def cut(self, target_num):
+        self.groups=self.groups[:,:target_num]
+
+
     def union(self, source, target):
         self.groups[target, :] += self.groups[source, :]
 
@@ -42,3 +47,4 @@ class MeshUnion:
         if padding_a > 0:
             padding_a = ConstantPad2d((0, 0, 0, padding_a), 0)
             self.groups = padding_a(self.groups)
+

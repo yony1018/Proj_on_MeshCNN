@@ -21,8 +21,8 @@ class MeshConv(nn.Module):
         x = x.squeeze(-1)
         G = torch.cat([self.pad_gemm(i, x.shape[2], x.device) for i in mesh], 0)
         # build 'neighborhood image' and apply convolution
-        G = self.create_GeMM(x, G)
-        x = self.conv(G)
+        G = self.create_GeMM(x, G)      #G 16 5 750 5
+        x = self.conv(G)        #x 16 64 750 1
         return x
 
     def flatten_gemm_inds(self, Gi):
@@ -36,6 +36,8 @@ class MeshConv(nn.Module):
         Gi = Gi.float() + add_fac[:, 1:, :]
         return Gi
 
+#TODO------------------------卷积原理------------------------------#
+    #GI对应边的编号
     def create_GeMM(self, x, Gi):
         """ gathers the edge features (x) with from the 1-ring indices (Gi)
         applys symmetric functions to handle order invariance
@@ -54,11 +56,13 @@ class MeshConv(nn.Module):
         Gi_flat = Gi_flat.view(-1).long()
         #
         odim = x.shape
+        #将tensor的维度换位
         x = x.permute(0, 2, 1).contiguous()
         x = x.view(odim[0] * odim[2], odim[1])
 
         f = torch.index_select(x, dim=0, index=Gi_flat)
         f = f.view(Gishape[0], Gishape[1], Gishape[2], -1)
+        #将tensor的维度换位
         f = f.permute(0, 3, 1, 2)
 
         # apply the symmetric functions for an equivariant conv
