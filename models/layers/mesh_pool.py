@@ -63,7 +63,7 @@ class MeshPool(nn.Module):
 
             edge_id = int(edge_id)
             #TODO:-------------------after integer edge_id, it may out of 750---------------#
-            assert edge_id<=750,'edge_id out of 750!'
+            # assert edge_id<=750,'edge_id out of 750!'
             if mask[edge_id]:
                 self.__pool_edge(mesh, edge_id, mask, edge_groups)
         mesh.clean(mask, edge_groups)
@@ -207,7 +207,12 @@ class MeshPool(nn.Module):
         if squared_magnitude.shape[-1] != 1:
             squared_magnitude = squared_magnitude.unsqueeze(-1)
         edge_ids = torch.arange(edges_count, device=squared_magnitude.device, dtype=torch.float32).unsqueeze(-1)
-        heap = torch.cat((squared_magnitude, edge_ids), dim=-1).tolist()
+        #TODO:尺寸不同时自适应调整heap大小
+        try:
+            heap = torch.cat((squared_magnitude, edge_ids), dim=-1).tolist()
+        except:
+            edge_ids = torch.arange(features.shape[1], device=squared_magnitude.device, dtype=torch.float32).unsqueeze(-1)
+            heap = torch.cat((squared_magnitude, edge_ids), dim=-1).tolist()
         heapify(heap)
         return heap
 
